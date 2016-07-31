@@ -47,3 +47,4 @@ bool ProcessFrameAndColours(cv::Mat& frame, Face& face, bool useUpright);
 std::vector<std::vector<int>>& GetColourCounts();
 std::string GetColourName(TriColour colour);
 std::vector<TriColour> GetWinningColours();
+cv::Mat& GetPolyMat();

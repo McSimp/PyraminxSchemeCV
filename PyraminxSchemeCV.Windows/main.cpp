@@ -28,7 +28,7 @@ extern "C" {
 		ResetColourCounts();
 	}
 
-	__declspec(dllexport) bool GetColours(bool mirrored, int expectedOrientation, int* colours)
+	__declspec(dllexport) bool GetColours(bool mirrored, int expectedOrientation, int* colours, unsigned char* data, int outWidth, int outHeight)
 	{
 		cv::Mat frame;
 		cap->read(frame);
@@ -56,6 +56,19 @@ extern "C" {
 		{
 			colours[i] = (int)winningColours[i];
 		}
+
+		// Get impolys, resize to the outwidth/outheight and send out
+		cv::Mat& impolys = GetPolyMat();
+		cv::Mat resizedImg(outHeight, outWidth, impolys.type());
+		cv::resize(impolys, resizedImg, resizedImg.size(), cv::INTER_LINEAR);
+
+		cv::Mat argbImg;
+		cv::cvtColor(resizedImg, argbImg, CV_RGB2BGRA);
+		std::vector<cv::Mat> bgra;
+		cv::split(argbImg, bgra);
+		std::swap(bgra[0], bgra[3]);
+		std::swap(bgra[1], bgra[2]);
+		std::memcpy(data, argbImg.data, argbImg.total() * argbImg.elemSize());
 
 		return result;
 	}

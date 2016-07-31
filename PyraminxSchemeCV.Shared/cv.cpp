@@ -319,6 +319,8 @@ void DrawTriangleInfo(cv::Mat& img, Face& face, int index, const std::string& na
 	cv::putText(img, std::to_string(tri.center.x) + "," + std::to_string(tri.center.y) + " " + name, cv::Point(tri.center.x - 20, tri.center.y + 20), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255, 255, 255), 1);
 }
 
+cv::Mat impolys;
+
 bool ProcessFrame(cv::Mat& frame, Face& face, bool useUpright)
 {
 	cv::Mat imcanny = GetColourCanny(frame);
@@ -331,14 +333,14 @@ bool ProcessFrame(cv::Mat& frame, Face& face, bool useUpright)
 
 	std::vector<PyraTriangle> triangles = GetFaceTriangles(contours);
 
-#if SHOW_DEBUG
-	cv::Mat impolys = frame.clone();
+	impolys = frame.clone();
 	for (auto& triangle : triangles)
 	{
 		cv::Point* approxPoints = triangle.polygon.data();
 		int n = triangle.polygon.size();
 		cv::polylines(impolys, &approxPoints, &n, 1, true, cv::Scalar(255, 0, 0), 3);
 	}
+#if SHOW_DEBUG
 	cv::imshow("polys", impolys);
 #endif
 
@@ -431,4 +433,9 @@ std::vector<TriColour> GetWinningColours()
 	}
 
 	return result;
+}
+
+cv::Mat& GetPolyMat()
+{
+	return impolys;
 }
