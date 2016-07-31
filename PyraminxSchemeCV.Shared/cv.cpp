@@ -4,12 +4,9 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <memory>
 #include <chrono>
+#include "cv.h"
 
 #define SHOW_DEBUG 1
-
-enum TriColour {
-	Red, Green, Blue, Yellow, Invalid
-};
 
 std::string GetColourName(TriColour colour)
 {
@@ -32,42 +29,6 @@ std::string GetColourName(TriColour colour)
 
 	return "INVALID";
 }
-
-class PyraTriangle
-{
-public:
-	double area;
-	std::vector<cv::Point> polygon;
-	cv::Point center;
-};
-
-class Face
-{
-public:
-	static const int TOP = 0;
-	static const int MIDDLE_LEFT = 1;
-	static const int MIDDLE_MIDDLE = 2;
-	static const int MIDDLE_RIGHT = 3;
-	static const int BOTTOM_LEFT = 4;
-	static const int BOTTOM_MID_LEFT = 5;
-	static const int BOTTOM_MIDDLE = 6;
-	static const int BOTTOM_MID_RIGHT = 7;
-	static const int BOTTOM_RIGHT = 8;
-
-	std::vector<PyraTriangle> triangles = std::vector<PyraTriangle>(9); // These triangles are ordered according to [top, middle_left, middle_middle, middle_right, bottom_left, bottom_mleft, bottom_middle, bottom_mright, bottom_right]
-	std::vector<TriColour> colours = std::vector<TriColour>(9);
-
-	double GetMeanArea()
-	{
-		double mean = 0;
-		for (auto& tri : triangles)
-		{
-			mean += tri.area;
-		}
-		return mean / (double)triangles.size();
-	}
-	// TODO: Accessor functions
-};
 
 const double CLOSE_CENTER_DIST2 = 10;
 double CANNY_THRESH_MIN = 100;
@@ -243,6 +204,47 @@ void ProcessUprightCenters(std::vector<PyraTriangle>& triangles, Face& face)
 	face.triangles[Face::BOTTOM_MID_RIGHT] = bottoms[3];
 }
 
+void ProcessUpsideDownCenters(std::vector<PyraTriangle>& triangles, Face& face)
+{
+	// At this point we have 9 triangles.
+	// Figure out what the triangles actually map to
+	// We know for sure that the bottom right is min x, bottom left
+	// is max x, and top is max y.
+
+	// Sort by x first
+	std::sort(std::begin(triangles), std::end(triangles), SortX);
+	face.triangles[Face::BOTTOM_RIGHT] = triangles[0];
+	face.triangles[Face::BOTTOM_LEFT] = triangles[8];
+
+	// Sort by y now
+	std::sort(std::begin(triangles), std::end(triangles), SortY);
+	face.triangles[Face::TOP] = triangles[8];
+	face.triangles[Face::MIDDLE_MIDDLE] = triangles[7];
+
+	if (triangles[5].center.x < triangles[6].center.x)
+	{
+		face.triangles[Face::MIDDLE_LEFT] = triangles[6];
+		face.triangles[Face::MIDDLE_RIGHT] = triangles[5];
+	}
+	else
+	{
+		face.triangles[Face::MIDDLE_LEFT] = triangles[5];
+		face.triangles[Face::MIDDLE_RIGHT] = triangles[6];
+	}
+
+	std::vector<PyraTriangle> bottoms(5);
+	bottoms[0] = triangles[0];
+	bottoms[1] = triangles[1];
+	bottoms[2] = triangles[2];
+	bottoms[3] = triangles[3];
+	bottoms[4] = triangles[4];
+	std::sort(std::begin(bottoms), std::end(bottoms), SortX);
+
+	face.triangles[Face::BOTTOM_MID_LEFT] = bottoms[3];
+	face.triangles[Face::BOTTOM_MIDDLE] = bottoms[2];
+	face.triangles[Face::BOTTOM_MID_RIGHT] = bottoms[1];
+}
+
 TriColour GetColourFromHS(int hue, int sat)
 {
 	if (hue < 40 && sat > 200)
@@ -317,14 +319,9 @@ void DrawTriangleInfo(cv::Mat& img, Face& face, int index, const std::string& na
 	cv::putText(img, std::to_string(tri.center.x) + "," + std::to_string(tri.center.y) + " " + name, cv::Point(tri.center.x - 20, tri.center.y + 20), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255, 255, 255), 1);
 }
 
-bool ProcessFrame(cv::Mat& frame, Face& face)
+bool ProcessFrame(cv::Mat& frame, Face& face, bool useUpright)
 {
-	cv::Mat flipped; // TODO: static alloc
-	cv::flip(frame, flipped, 1);
-	cv::Mat imsize; // TODO: static alloc
-	cv::resize(flipped, imsize, cv::Size(0, 0), 0.8, 0.8);
-
-	cv::Mat imcanny = GetColourCanny(imsize);
+	cv::Mat imcanny = GetColourCanny(frame);
 #if SHOW_DEBUG
 	cv::imshow("imcanny", imcanny);
 #endif
@@ -335,7 +332,7 @@ bool ProcessFrame(cv::Mat& frame, Face& face)
 	std::vector<PyraTriangle> triangles = GetFaceTriangles(contours);
 
 #if SHOW_DEBUG
-	cv::Mat impolys = imsize.clone();
+	cv::Mat impolys = frame.clone();
 	for (auto& triangle : triangles)
 	{
 		cv::Point* approxPoints = triangle.polygon.data();
@@ -351,11 +348,19 @@ bool ProcessFrame(cv::Mat& frame, Face& face)
 		return false;
 	}
 
-	ProcessUprightCenters(triangles, face);
-	UpdateTriangleColours(imsize, face);
+	if (useUpright)
+	{
+		ProcessUprightCenters(triangles, face);
+	}
+	else
+	{
+		ProcessUpsideDownCenters(triangles, face);
+	}
+	
+	UpdateTriangleColours(frame, face);
 
 #if SHOW_DEBUG
-	cv::Mat imcenters = imsize.clone();
+	cv::Mat imcenters = frame.clone();
 	for (auto& triangle : triangles)
 	{
 		cv::circle(imcenters, triangle.center, 4, cv::Scalar(255, 0, 0), -1);
@@ -375,4 +380,55 @@ bool ProcessFrame(cv::Mat& frame, Face& face)
 #endif
 
 	return true;
+}
+
+std::vector<std::vector<int>> colourCounts; // 9x5
+
+bool ProcessFrameAndColours(cv::Mat& frame, Face& face, bool useUpright)
+{
+	if (ProcessFrame(frame, face, useUpright))
+	{
+		// We successfully got colour data from a frame, update counts
+		for (int i = 0; i < 9; i++)
+		{
+			colourCounts[i][face.colours[i]]++;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+void ResetColourCounts()
+{
+	colourCounts = std::vector<std::vector<int>>(9);
+	for (int i = 0; i < 9; i++)
+	{
+		colourCounts[i] = std::vector<int>(5);
+
+		for (int j = 0; j < 5; j++)
+		{
+			colourCounts[i][j] = 0;
+		}
+	}
+}
+
+std::vector<std::vector<int>>& GetColourCounts()
+{
+	return colourCounts;
+}
+
+std::vector<TriColour> GetWinningColours()
+{
+	std::vector<TriColour> result(9);
+	for (int i = 0; i < 9; i++)
+	{
+		auto max = std::max_element(std::begin(colourCounts[i]), std::end(colourCounts[i]));
+		TriColour colour = (TriColour)std::distance(std::begin(colourCounts[i]), max);
+		result[i] = colour;
+		//std::cout << GetColourName(colour) << " - " << colourCounts[i][colour] << std::endl;
+	}
+
+	return result;
 }

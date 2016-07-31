@@ -9,10 +9,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PyraminxSchemeCV.Shared", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PyraminxSchemeCV.Windows", "PyraminxSchemeCV.Windows\PyraminxSchemeCV.Windows.vcxproj", "{BCAF472A-E467-46AF-8EAA-AA46D2B030CF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PyraminxSchemeCV.Tester", "PyraminxSchemeCV.Tester\PyraminxSchemeCV.Tester.vcxproj", "{84B26FD6-994E-4F1E-853A-87A308B06D6E}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		PyraminxSchemeCV.Shared\PyraminxSchemeCV.Shared.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
 		PyraminxSchemeCV.Shared\PyraminxSchemeCV.Shared.vcxitems*{77e959de-041f-4634-bb73-4492f3b3bf0a}*SharedItemsImports = 4
+		PyraminxSchemeCV.Shared\PyraminxSchemeCV.Shared.vcxitems*{84b26fd6-994e-4f1e-853a-87a308b06d6e}*SharedItemsImports = 4
 		PyraminxSchemeCV.Shared\PyraminxSchemeCV.Shared.vcxitems*{bcaf472a-e467-46af-8eaa-aa46d2b030cf}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,6 +57,18 @@ Global
 		{BCAF472A-E467-46AF-8EAA-AA46D2B030CF}.Release|x64.Build.0 = Release|x64
 		{BCAF472A-E467-46AF-8EAA-AA46D2B030CF}.Release|x86.ActiveCfg = Release|Win32
 		{BCAF472A-E467-46AF-8EAA-AA46D2B030CF}.Release|x86.Build.0 = Release|Win32
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Debug|ARM.ActiveCfg = Debug|Win32
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Debug|x64.ActiveCfg = Debug|x64
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Debug|x64.Build.0 = Debug|x64
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Debug|x86.ActiveCfg = Debug|Win32
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Debug|x86.Build.0 = Debug|Win32
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Release|ARM.ActiveCfg = Release|Win32
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Release|ARM64.ActiveCfg = Release|Win32
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Release|x64.ActiveCfg = Release|x64
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Release|x64.Build.0 = Release|x64
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Release|x86.ActiveCfg = Release|Win32
+		{84B26FD6-994E-4F1E-853A-87A308B06D6E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
